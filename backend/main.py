@@ -77,3 +77,62 @@ def get_live_kp_data() -> Dict[str, Any]:
          raise HTTPException(status_code=502, detail=f"Failed to fetch NOAA data: {str(exc)}")
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Internal processing error: {repr(exc)}")
+
+    # --- SOLAR WIND ENDPOINT ---
+
+NOAA_PLASMA_URL = "https://services.swpc.noaa.gov/products/geospace/propagated-solar-wind-1-hour.json"
+
+def evaluate_wind_risk(speed: float) -> Dict[str, str]:
+    """Calculates operational risk based on Solar Wind speed (km/s)."""
+    if speed >= 800:
+        return {"level": "CRITICAL", "action": "Extreme solar wind detected; high storm probability"}
+    elif speed >= 500:
+        return {"level": "WARNING", "action": "Elevated solar wind; monitor for geomagnetic disruption"}
+    else:
+        return {"level": "NORMAL", "action": "Nominal solar wind"}
+
+@app.get("/api/solar-wind-live")
+def get_live_solar_wind() -> Dict[str, Any]:
+    """Fetches real-time Solar Wind plasma data directly from NOAA SWPC."""
+    try:
+        response = requests.get(NOAA_PLASMA_URL)
+        response.raise_for_status()
+        raw_data = response.json()
+
+        # Convert to DataFrame (skip the header row)
+        df = pd.DataFrame(raw_data[1:], columns=raw_data[0])
+        
+        if df.empty:
+             raise ValueError("NOAA returned empty data arrays.")
+             
+        # NOAA sensors sometimes drop out. Drop any rows with missing data.
+        df = df.dropna(subset=['speed', 'density'])
+             
+        # Extract the latest valid entry
+        latest_entry = df.iloc[-1]
+        time_tag = latest_entry['time_tag']
+        wind_speed = float(latest_entry['speed'])
+        wind_density = float(latest_entry['density'])
+
+        risk_info = evaluate_wind_risk(wind_speed)
+
+        # Prepare recent history for the frontend charts
+        recent_history = []
+        for _, row in df.tail(10).iterrows():
+            recent_history.append({
+                "timestamp": row['time_tag'], 
+                "speed": float(row['speed']),
+                "density": float(row['density'])
+            })
+
+        return {
+            "timestamp": time_tag,
+            "current_speed": wind_speed,
+            "current_density": wind_density,
+            "risk_assessment": risk_info,
+            "recent_history": recent_history
+        }
+    except requests.exceptions.RequestException as exc:
+         raise HTTPException(status_code=502, detail=f"Failed to fetch NOAA data: {str(exc)}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Internal processing error: {repr(exc)}")
