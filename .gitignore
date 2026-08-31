@@ -1,0 +1,18 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Virtual environment
+env/
+venv/
+.env
+
+# Frontend local files
+frontend/node_modules/
+frontend/dist/
+frontend/.eslintcache
+.DS_Store
