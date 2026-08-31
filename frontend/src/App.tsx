@@ -58,10 +58,51 @@ interface ForecastData {
   stale_reason?: string;
 }
 
+interface AntigravityData {
+  subsystems: {
+    advanced_predictive_core: {
+      l1_telemetry: any;
+      predictions: {
+        imf_bz_nt: number;
+        bz_orientation: string;
+        cme_arrival_time_minutes: number;
+        early_warning_status: string;
+      }
+    };
+    navic_ionospheric_disruption: {
+      regional_telemetry: Array<{
+        lat: number;
+        lon: number;
+        tec_units: number;
+        scintillation_s4_index: number;
+        navic_l5_error_meters: number;
+        correction_vector: { dx: number; dy: number };
+      }>;
+    };
+    localized_power_grid_gic: {
+      transformer_nodes: Array<{
+        node_id: string;
+        node_name: string;
+        gic_amperes: number;
+        node_status: string;
+        recommended_action: string;
+      }>;
+      automated_topology_advisory: any;
+    };
+    satellite_orbital_drag: Array<{
+      satellite_id: string;
+      projected_decay_meters_per_day: number;
+      alert_level: string;
+      recommended_station_keeping_burn_kg: number;
+    }>;
+  }
+}
+
 function App() {
   const [kp, setKp] = useState<KpData | null>(null);
   const [wind, setWind] = useState<SolarWindData | null>(null);
   const [forecast, setForecast] = useState<ForecastData | null>(null);
+  const [core, setCore] = useState<AntigravityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
@@ -70,23 +111,26 @@ function App() {
     setLoading(true);
     try {
       const cacheBuster = Date.now();
-      const [kpRes, windRes, forecastRes] = await Promise.all([
+      const [kpRes, windRes, forecastRes, coreRes] = await Promise.all([
         fetch(`/api/kp-live?_t=${cacheBuster}`, { cache: 'no-store' }),
         fetch(`/api/solar-wind-live?_t=${cacheBuster}`, { cache: 'no-store' }),
-        fetch(`/api/kp-forecast?_t=${cacheBuster}`, { cache: 'no-store' })
+        fetch(`/api/kp-forecast?_t=${cacheBuster}`, { cache: 'no-store' }),
+        fetch(`/api/antigravity-core?_t=${cacheBuster}`, { cache: 'no-store' })
       ]);
 
-      if (!kpRes.ok || !windRes.ok || !forecastRes.ok) {
+      if (!kpRes.ok || !windRes.ok || !forecastRes.ok || !coreRes.ok) {
         throw new Error('API server returned error response.');
       }
 
       const kpJson = await kpRes.json();
       const windJson = await windRes.json();
       const forecastJson = await forecastRes.json();
+      const coreJson = await coreRes.json();
 
       setKp(kpJson);
       setWind(windJson);
       setForecast(forecastJson);
+      setCore(coreJson);
       setError(null);
       setLastRefreshed(new Date());
     } catch (err: any) {
@@ -373,77 +417,127 @@ function App() {
         </section>
       </main>
 
-      {/* Mitigation Action Panel & Educational explainer */}
-      <section className="panels-section">
-        {/* Mitigation Instructions */}
-        <article className="info-panel">
-          <h3>Mitigation Action Guidelines</h3>
-          <div className="action-guidelines">
-            <div className="action-item">
-              <span className="action-item-icon">📡</span>
-              <div>
-                <strong>HF Communications & Navigation</strong>
-                <p style={{ margin: '4px 0 0', color: 'var(--text)', fontSize: '13px' }}>
-                  {kp?.risk_assessment.level === 'CRITICAL' 
-                    ? 'CRITICAL: Severe disruption likely. Switch to satellite links; restrict polar HF frequencies.' 
-                    : kp?.risk_assessment.level === 'WARNING' 
-                    ? 'WARNING: Minor degradation possible. Monitor signal strength on HF bands.' 
-                    : 'NOMINAL: Normal HF propagation and GPS services.'}
-                </p>
+      {/* Advanced Predictive Core UI */}
+      {core && (
+        <section className="core-grid">
+          {/* Subsystem 4: Aditya-L1 Predictive Core */}
+          <article className="core-panel" style={{ borderColor: 'var(--accent)' }}>
+            <h3>🛰️ Aditya-L1 Predictive Core</h3>
+            <div className="metric-details" style={{ marginBottom: '16px' }}>
+              <div className="detail-row">
+                <span className="detail-label">Predicted IMF Bz:</span>
+                <span className="detail-value" style={{ color: core.subsystems.advanced_predictive_core.predictions.imf_bz_nt < 0 ? '#ef4444' : '#10b981' }}>
+                  {core.subsystems.advanced_predictive_core.predictions.imf_bz_nt} nT
+                </span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Bz Orientation:</span>
+                <span className="detail-value">{core.subsystems.advanced_predictive_core.predictions.bz_orientation}</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">CME Earth-Arrival Buffer:</span>
+                <span className="detail-value">{core.subsystems.advanced_predictive_core.predictions.cme_arrival_time_minutes} min</span>
               </div>
             </div>
-
-            <div className="action-item">
-              <span className="action-item-icon">✈️</span>
-              <div>
-                <strong>Aviation Operations</strong>
-                <p style={{ margin: '4px 0 0', color: 'var(--text)', fontSize: '13px' }}>
-                  {kp?.risk_assessment.level === 'CRITICAL' 
-                    ? 'CRITICAL: Reroute polar passenger routes south of affected geomagnetic latitudes.' 
-                    : 'NOMINAL: Normal operations on all air lanes.'}
-                </p>
+            {core.subsystems.advanced_predictive_core.predictions.early_warning_status === 'ACTIVE' && (
+              <div className="advisory-box">
+                <strong>WARNING ACTIVE:</strong> Solar storm payload projected to hit Earth in &lt; 60 mins. Initiate defensive postures.
               </div>
-            </div>
+            )}
+          </article>
 
-            <div className="action-item">
-              <span className="action-item-icon">⚡</span>
-              <div>
-                <strong>Power Grid Operators</strong>
-                <p style={{ margin: '4px 0 0', color: 'var(--text)', fontSize: '13px' }}>
-                  {kp?.risk_assessment.level === 'CRITICAL' 
-                    ? 'CRITICAL: High GIC risk. Configure grid lines for line resistance; monitor transformer voltages.' 
-                    : 'NOMINAL: Ground currents within safe nominal tolerances.'}
-                </p>
+          {/* Subsystem 1: NavIC Ionospheric Disruption */}
+          <article className="core-panel">
+            <h3>📡 NavIC Ionospheric Disruption</h3>
+            <table className="core-table">
+              <thead>
+                <tr>
+                  <th>Coordinates</th>
+                  <th>TEC Units</th>
+                  <th>Error (m)</th>
+                  <th>(dx, dy) Vector</th>
+                </tr>
+              </thead>
+              <tbody>
+                {core.subsystems.navic_ionospheric_disruption.regional_telemetry.slice(0, 4).map((region, idx) => (
+                  <tr key={idx}>
+                    <td>{region.lat}°N, {region.lon}°E</td>
+                    <td>{region.tec_units}</td>
+                    <td style={{ color: region.navic_l5_error_meters > 10 ? '#ef4444' : 'inherit' }}>
+                      {region.navic_l5_error_meters}m
+                    </td>
+                    <td style={{ fontFamily: 'var(--mono)', fontSize: '11px' }}>
+                      {region.correction_vector.dx}, {region.correction_vector.dy}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </article>
+
+          {/* Subsystem 2: Power Grid GIC Simulator */}
+          <article className="core-panel">
+            <h3>⚡ Localized Power Grid Simulator</h3>
+            <table className="core-table">
+              <thead>
+                <tr>
+                  <th>Grid Node</th>
+                  <th>GIC (Amps)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {core.subsystems.localized_power_grid_gic.transformer_nodes.map((node, idx) => (
+                  <tr key={idx}>
+                    <td>{node.node_name}</td>
+                    <td>{node.gic_amperes}A</td>
+                    <td>
+                      <span className={`status-dot ${node.node_status.toLowerCase()}`}></span>
+                      {node.node_status}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {Array.isArray(core.subsystems.localized_power_grid_gic.automated_topology_advisory) && (
+              <div className="advisory-box" style={{ marginTop: '12px' }}>
+                <strong>AI ADVISORY:</strong> Topology actions required: {
+                  core.subsystems.localized_power_grid_gic.automated_topology_advisory.map(a => `${a.node_id} (${a.action})`).join(', ')
+                }
               </div>
-            </div>
-          </div>
-        </article>
+            )}
+          </article>
 
-        {/* Educational Content */}
-        <article className="info-panel">
-          <h3>Understanding Space Weather</h3>
-          <div className="educational-list">
-            <div className="edu-item">
-              <h4>What is the Planetary Kp-Index?</h4>
-              <p>
-                The Kp-index is a scale from 0 to 9 used to measure geomagnetic activity. It summarizes disturbances in the Earth's magnetic field. Values &ge; 5 represent geomagnetic storm alerts.
-              </p>
-            </div>
-            <div className="edu-item">
-              <h4>Why measure Solar Wind Speed & Density?</h4>
-              <p>
-                Solar wind is a constant stream of plasma from the sun. Fast solar wind (&gt; 500 km/s) or high densities trigger geomagnetic storms when colliding with the Earth's magnetosphere.
-              </p>
-            </div>
-            <div className="edu-item">
-              <h4>How does ML Forecasting work?</h4>
-              <p>
-                A Random Forest regressor analyses Kp history (lag observations) and trends. It learns historical patterns to forecast the Kp value for the next 3 hours, offering early-warning warning alerts.
-              </p>
-            </div>
-          </div>
-        </article>
-      </section>
+          {/* Subsystem 3: Satellite Orbital Drag */}
+          <article className="core-panel">
+            <h3>🛰️ LEO Satellite Orbital Decay</h3>
+            <table className="core-table">
+              <thead>
+                <tr>
+                  <th>Satellite</th>
+                  <th>Decay/Day</th>
+                  <th>Fuel Burn Alert</th>
+                </tr>
+              </thead>
+              <tbody>
+                {core.subsystems.satellite_orbital_drag.map((sat, idx) => (
+                  <tr key={idx}>
+                    <td>{sat.satellite_id}</td>
+                    <td style={{ color: sat.projected_decay_meters_per_day > 100 ? '#f59e0b' : 'inherit' }}>
+                      {sat.projected_decay_meters_per_day} m
+                    </td>
+                    <td>
+                      {sat.alert_level === 'MANEUVER_REQUIRED' 
+                        ? <span style={{ color: '#ef4444' }}>Burn {sat.recommended_station_keeping_burn_kg}kg</span>
+                        : <span style={{ color: '#10b981' }}>Nominal</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </article>
+        </section>
+      )}
 
       {/* Footer Info */}
       <footer style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', color: 'var(--text)', fontSize: '12px', textAlign: 'center', marginTop: '24px' }}>

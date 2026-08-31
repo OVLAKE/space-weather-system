@@ -8,7 +8,7 @@ import requests
 import logging
 import joblib
 import os
-
+from antigravity_core import AntigravitySuite
 logger = logging.getLogger("space-weather")
 
 app = FastAPI(
@@ -439,3 +439,26 @@ def get_kp_forecast() -> Dict[str, Any]:
             "data_status": "unavailable",
             "stale_reason": "NOAA data source unreachable and no cached data available yet."
         }
+
+@app.get("/api/antigravity-core")
+async def get_antigravity_core():
+    """
+    Instantiates the AntigravitySuite, fetches the latest live global inputs, 
+    and returns the massive simulated physics payload (NavIC, Grid, Aditya-L1, Orbits).
+    """
+    try:
+        # Fetch live inputs (this relies on the cache if endpoints already ran, or hits the source directly)
+        kp_res = await get_kp_live()
+        kp = float(kp_res.get("current_kp", 0.0))
+        
+        sw_res = await get_solar_wind_live()
+        speed = float(sw_res.get("current_speed", 400.0))
+        density = float(sw_res.get("current_density", 5.0))
+    except Exception as e:
+        logger.warning(f"Core fallback: {e}")
+        kp = 0.0
+        speed = 400.0
+        density = 5.0
+        
+    suite = AntigravitySuite()
+    return suite.run_full_diagnostics(kp=kp, speed=speed, density=density)
