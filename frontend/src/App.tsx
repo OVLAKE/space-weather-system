@@ -69,10 +69,11 @@ function App() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const cacheBuster = Date.now();
       const [kpRes, windRes, forecastRes] = await Promise.all([
-        fetch('/api/kp-live'),
-        fetch('/api/solar-wind-live'),
-        fetch('/api/kp-forecast')
+        fetch(`/api/kp-live?_t=${cacheBuster}`, { cache: 'no-store' }),
+        fetch(`/api/solar-wind-live?_t=${cacheBuster}`, { cache: 'no-store' }),
+        fetch(`/api/kp-forecast?_t=${cacheBuster}`, { cache: 'no-store' })
       ]);
 
       if (!kpRes.ok || !windRes.ok || !forecastRes.ok) {
@@ -213,6 +214,9 @@ function App() {
           <p className="header-subtitle">Real-time geomagnetic activity & predictive alerts</p>
         </div>
         <div className="header-controls">
+          <span style={{ fontSize: '12px', color: 'var(--text)', fontFamily: 'var(--mono)' }}>
+            Updated: {lastRefreshed.toLocaleTimeString()}
+          </span>
           <span className={`status-badge ${overallStatus}`}>
             <span className="status-pulse"></span>
             {overallStatus === 'live' ? 'NOAA Live' : overallStatus === 'stale' ? 'Stale (Fallback)' : 'Outage'}
