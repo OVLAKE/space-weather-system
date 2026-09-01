@@ -373,7 +373,7 @@ function App() {
             {forecast && forecast.forecasts.map((f, idx) => (
               <div className="detail-row" key={idx} style={{ fontSize: '12px', alignItems: 'center' }}>
                 <span className="detail-value" style={{ fontFamily: 'var(--mono)' }}>
-                  {new Date(f.forecast_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(f.forecast_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}
                 </span>
                 <span style={{ fontWeight: 700, color: 'var(--text-h)' }}>
                   Kp {f.forecasted_kp.toFixed(2)}

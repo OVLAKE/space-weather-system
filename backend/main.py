@@ -357,7 +357,10 @@ def get_kp_forecast() -> Dict[str, Any]:
         curr_kp_2 = kp_t_2
         curr_kp_3 = kp_t_3
         
-        for step in range(1, 4):
+        now_utc = pd.Timestamp.now(tz='UTC')
+        
+        # Fast-forward the recursive predictions until we have 3 future predictions
+        while len(forecast_list) < 3:
             roll_mean = (curr_kp + curr_kp_1 + curr_kp_2) / 3.0
             roll_max = max(curr_kp, curr_kp_1, curr_kp_2)
             trend = curr_kp - curr_kp_1
@@ -386,13 +389,15 @@ def get_kp_forecast() -> Dict[str, Any]:
             
             # Step time forward by 3 hours
             current_time = current_time + pd.Timedelta(hours=3)
-            risk = evaluate_kp_risk(pred_val)
             
-            forecast_list.append({
-                "forecast_time": current_time.isoformat(),
-                "forecasted_kp": pred_val,
-                "risk_assessment": risk
-            })
+            # Only append to the list if the forecast time is actually in the future (or very close to it)
+            if current_time >= now_utc - pd.Timedelta(hours=1):
+                risk = evaluate_kp_risk(pred_val)
+                forecast_list.append({
+                    "forecast_time": current_time.isoformat(),
+                    "forecasted_kp": pred_val,
+                    "risk_assessment": risk
+                })
             
             # Recursive update
             curr_kp_3 = curr_kp_2
@@ -441,17 +446,17 @@ def get_kp_forecast() -> Dict[str, Any]:
         }
 
 @app.get("/api/antigravity-core")
-async def get_antigravity_core():
+def get_antigravity_core():
     """
     Instantiates the AntigravitySuite, fetches the latest live global inputs, 
     and returns the massive simulated physics payload (NavIC, Grid, Aditya-L1, Orbits).
     """
     try:
         # Fetch live inputs (this relies on the cache if endpoints already ran, or hits the source directly)
-        kp_res = await get_kp_live()
+        kp_res = get_live_kp_data()
         kp = float(kp_res.get("current_kp", 0.0))
         
-        sw_res = await get_solar_wind_live()
+        sw_res = get_live_solar_wind()
         speed = float(sw_res.get("current_speed", 400.0))
         density = float(sw_res.get("current_density", 5.0))
     except Exception as e:
