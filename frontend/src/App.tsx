@@ -40,6 +40,7 @@ interface ForecastItem {
   forecast_time: string;
   forecasted_kp: number;
   risk_assessment: RiskAssessment;
+  is_past?: boolean;
 }
 
 interface ForecastData {
@@ -306,9 +307,9 @@ function App() {
               </span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Observation UTC:</span>
+              <span className="detail-label">Observation Time:</span>
               <span className="detail-value">
-                {kp ? new Date(kp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}
+                {kp ? new Date(kp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }) : '--'}
               </span>
             </div>
           </div>
@@ -371,9 +372,10 @@ function App() {
               Forecast Timeline
             </div>
             {forecast && forecast.forecasts.map((f, idx) => (
-              <div className="detail-row" key={idx} style={{ fontSize: '12px', alignItems: 'center' }}>
+              <div className="detail-row" key={idx} style={{ fontSize: '12px', alignItems: 'center', opacity: f.is_past ? 0.6 : 1 }}>
                 <span className="detail-value" style={{ fontFamily: 'var(--mono)' }}>
                   {new Date(f.forecast_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}
+                  {f.is_past && <span style={{ fontStyle: 'italic', marginLeft: '4px', fontSize: '10px', color: 'var(--text)' }}>(Interpolated)</span>}
                 </span>
                 <span style={{ fontWeight: 700, color: 'var(--text-h)' }}>
                   Kp {f.forecasted_kp.toFixed(2)}
@@ -541,7 +543,7 @@ function App() {
 
       {/* Footer Info */}
       <footer style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', color: 'var(--text)', fontSize: '12px', textAlign: 'center', marginTop: '24px' }}>
-        Space Weather Decision Support System • Local Time: {lastRefreshed.toLocaleTimeString()} • Data refreshed every 30 seconds
+        Space Weather Decision Support System • Local Time: {lastRefreshed.toLocaleTimeString([], { timeZoneName: 'short' })} • Data refreshed every 30 seconds
       </footer>
     </div>
   );

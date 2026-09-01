@@ -390,14 +390,15 @@ def get_kp_forecast() -> Dict[str, Any]:
             # Step time forward by 3 hours
             current_time = current_time + pd.Timedelta(hours=3)
             
-            # Only append to the list if the forecast time is actually in the future (or very close to it)
-            if current_time >= now_utc - pd.Timedelta(hours=1):
-                risk = evaluate_kp_risk(pred_val)
-                forecast_list.append({
-                    "forecast_time": current_time.isoformat(),
-                    "forecasted_kp": pred_val,
-                    "risk_assessment": risk
-                })
+            risk = evaluate_kp_risk(pred_val)
+            is_past = current_time < now_utc - pd.Timedelta(minutes=15)
+            
+            forecast_list.append({
+                "forecast_time": current_time.isoformat(),
+                "forecasted_kp": pred_val,
+                "risk_assessment": risk,
+                "is_past": is_past
+            })
             
             # Recursive update
             curr_kp_3 = curr_kp_2
