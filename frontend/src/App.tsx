@@ -40,6 +40,7 @@ interface ForecastItem {
   forecast_time: string;
   forecasted_kp: number;
   risk_assessment: RiskAssessment;
+  is_past?: boolean;
 }
 
 interface ForecastData {
@@ -306,9 +307,9 @@ function App() {
               </span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Observation UTC:</span>
+              <span className="detail-label">Observation Time:</span>
               <span className="detail-value">
-                {kp ? new Date(kp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}
+                {kp ? new Date(kp.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }) : '--'}
               </span>
             </div>
           </div>
@@ -371,9 +372,10 @@ function App() {
               Forecast Timeline
             </div>
             {forecast && forecast.forecasts.map((f, idx) => (
-              <div className="detail-row" key={idx} style={{ fontSize: '12px', alignItems: 'center' }}>
+              <div className="detail-row" key={idx} style={{ fontSize: '12px', alignItems: 'center', opacity: f.is_past ? 0.6 : 1 }}>
                 <span className="detail-value" style={{ fontFamily: 'var(--mono)' }}>
-                  {new Date(f.forecast_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(f.forecast_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}
+                  {f.is_past && <span style={{ fontStyle: 'italic', marginLeft: '4px', fontSize: '10px', color: 'var(--text)' }}>(Interpolated)</span>}
                 </span>
                 <span style={{ fontWeight: 700, color: 'var(--text-h)' }}>
                   Kp {f.forecasted_kp.toFixed(2)}
@@ -422,21 +424,21 @@ function App() {
         <section className="core-grid">
           {/* Subsystem 4: Aditya-L1 Predictive Core */}
           <article className="core-panel" style={{ borderColor: 'var(--accent)' }}>
-            <h3>🛰️ Aditya-L1 Predictive Core</h3>
+            <h3>🛰️ Aditya-L1 Early Warning System</h3>
             <div className="metric-details" style={{ marginBottom: '16px' }}>
               <div className="detail-row">
-                <span className="detail-label">Predicted IMF Bz:</span>
+                <span className="detail-label">Storm Magnetic Threat (Bz):</span>
                 <span className="detail-value" style={{ color: core.subsystems.advanced_predictive_core.predictions.imf_bz_nt < 0 ? '#ef4444' : '#10b981' }}>
                   {core.subsystems.advanced_predictive_core.predictions.imf_bz_nt} nT
                 </span>
               </div>
               <div className="detail-row">
-                <span className="detail-label">Bz Orientation:</span>
+                <span className="detail-label">Impact Direction:</span>
                 <span className="detail-value">{core.subsystems.advanced_predictive_core.predictions.bz_orientation}</span>
               </div>
               <div className="detail-row">
-                <span className="detail-label">CME Earth-Arrival Buffer:</span>
-                <span className="detail-value">{core.subsystems.advanced_predictive_core.predictions.cme_arrival_time_minutes} min</span>
+                <span className="detail-label">Time Until Earth Impact:</span>
+                <span className="detail-value">{core.subsystems.advanced_predictive_core.predictions.cme_arrival_time_minutes} mins</span>
               </div>
             </div>
             {core.subsystems.advanced_predictive_core.predictions.early_warning_status === 'ACTIVE' && (
@@ -448,14 +450,14 @@ function App() {
 
           {/* Subsystem 1: NavIC Ionospheric Disruption */}
           <article className="core-panel">
-            <h3>📡 NavIC Ionospheric Disruption</h3>
+            <h3>📡 NavIC & GPS Signal Disruption</h3>
             <table className="core-table">
               <thead>
                 <tr>
                   <th>Coordinates</th>
-                  <th>TEC Units</th>
-                  <th>Error (m)</th>
-                  <th>(dx, dy) Vector</th>
+                  <th>Interference Level</th>
+                  <th>GPS Error</th>
+                  <th>Correction Data</th>
                 </tr>
               </thead>
               <tbody>
@@ -477,13 +479,13 @@ function App() {
 
           {/* Subsystem 2: Power Grid GIC Simulator */}
           <article className="core-panel">
-            <h3>⚡ Localized Power Grid Simulator</h3>
+            <h3>⚡ Indian Power Grid Safety Monitor</h3>
             <table className="core-table">
               <thead>
                 <tr>
-                  <th>Grid Node</th>
-                  <th>GIC (Amps)</th>
-                  <th>Status</th>
+                  <th>City Grid</th>
+                  <th>Storm Current</th>
+                  <th>Safety Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -501,7 +503,7 @@ function App() {
             </table>
             {Array.isArray(core.subsystems.localized_power_grid_gic.automated_topology_advisory) && (
               <div className="advisory-box" style={{ marginTop: '12px' }}>
-                <strong>AI ADVISORY:</strong> Topology actions required: {
+                <strong>AI ADVISORY:</strong> Emergency actions needed: {
                   core.subsystems.localized_power_grid_gic.automated_topology_advisory.map(a => `${a.node_id} (${a.action})`).join(', ')
                 }
               </div>
@@ -510,13 +512,13 @@ function App() {
 
           {/* Subsystem 3: Satellite Orbital Drag */}
           <article className="core-panel">
-            <h3>🛰️ LEO Satellite Orbital Decay</h3>
+            <h3>🛰️ Satellite Altitude Drop Monitor</h3>
             <table className="core-table">
               <thead>
                 <tr>
                   <th>Satellite</th>
-                  <th>Decay/Day</th>
-                  <th>Fuel Burn Alert</th>
+                  <th>Altitude Lost/Day</th>
+                  <th>Action Required</th>
                 </tr>
               </thead>
               <tbody>
@@ -541,7 +543,7 @@ function App() {
 
       {/* Footer Info */}
       <footer style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', color: 'var(--text)', fontSize: '12px', textAlign: 'center', marginTop: '24px' }}>
-        Space Weather Decision Support System • Local Time: {lastRefreshed.toLocaleTimeString()} • Data refreshed every 30 seconds
+        Space Weather Decision Support System • Local Time: {lastRefreshed.toLocaleTimeString([], { timeZoneName: 'short' })} • Data refreshed every 30 seconds
       </footer>
     </div>
   );
