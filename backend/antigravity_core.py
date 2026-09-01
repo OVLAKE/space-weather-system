@@ -106,6 +106,7 @@ class GICSimulator:
     """
     GRID_NODES = [
         {"id": "NR-DEL-01", "name": "Delhi 400kV", "lat": 28.6, "resistance_ohms": 0.5},
+        {"id": "ER-KOL-04", "name": "Kolkata 400kV", "lat": 22.5, "resistance_ohms": 0.4},
         {"id": "WR-MUM-02", "name": "Mumbai 765kV", "lat": 19.0, "resistance_ohms": 0.3},
         {"id": "SR-BLR-03", "name": "Bangalore 400kV", "lat": 12.9, "resistance_ohms": 0.6},
     ]
@@ -133,11 +134,11 @@ class GICSimulator:
             action = "None"
             if gic_amps > 100.0:
                 status = "CRITICAL"
-                action = "EMERGENCY: Decouple transformer neutral to ground; Initiate localized load shedding."
-                topology_changes.append({"node_id": node["id"], "action": "DECOUPLE_NEUTRAL"})
+                action = "EMERGENCY: Disconnect transformer ground wires to prevent melting. Prepare for minor blackouts."
+                topology_changes.append({"node_id": node["id"], "action": "DISCONNECT_GROUND_WIRE"})
             elif gic_amps > 40.0:
                 status = "WARNING"
-                action = "PREPARE: Reduce transformer loading; Bypass series capacitors."
+                action = "PREPARE: Reduce power load through transformers to prevent overheating."
 
             node_results.append({
                 "node_id": node["id"],
@@ -150,7 +151,7 @@ class GICSimulator:
 
         return {
             "transformer_nodes": node_results,
-            "automated_topology_advisory": topology_changes if topology_changes else "Grid topology stable."
+            "automated_topology_advisory": topology_changes if topology_changes else "Grid is stable. No action needed."
         }
 
 

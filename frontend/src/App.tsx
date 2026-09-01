@@ -424,21 +424,21 @@ function App() {
         <section className="core-grid">
           {/* Subsystem 4: Aditya-L1 Predictive Core */}
           <article className="core-panel" style={{ borderColor: 'var(--accent)' }}>
-            <h3>🛰️ Aditya-L1 Predictive Core</h3>
+            <h3>🛰️ Aditya-L1 Early Warning System</h3>
             <div className="metric-details" style={{ marginBottom: '16px' }}>
               <div className="detail-row">
-                <span className="detail-label">Predicted IMF Bz:</span>
+                <span className="detail-label">Storm Magnetic Threat (Bz):</span>
                 <span className="detail-value" style={{ color: core.subsystems.advanced_predictive_core.predictions.imf_bz_nt < 0 ? '#ef4444' : '#10b981' }}>
                   {core.subsystems.advanced_predictive_core.predictions.imf_bz_nt} nT
                 </span>
               </div>
               <div className="detail-row">
-                <span className="detail-label">Bz Orientation:</span>
+                <span className="detail-label">Impact Direction:</span>
                 <span className="detail-value">{core.subsystems.advanced_predictive_core.predictions.bz_orientation}</span>
               </div>
               <div className="detail-row">
-                <span className="detail-label">CME Earth-Arrival Buffer:</span>
-                <span className="detail-value">{core.subsystems.advanced_predictive_core.predictions.cme_arrival_time_minutes} min</span>
+                <span className="detail-label">Time Until Earth Impact:</span>
+                <span className="detail-value">{core.subsystems.advanced_predictive_core.predictions.cme_arrival_time_minutes} mins</span>
               </div>
             </div>
             {core.subsystems.advanced_predictive_core.predictions.early_warning_status === 'ACTIVE' && (
@@ -450,14 +450,14 @@ function App() {
 
           {/* Subsystem 1: NavIC Ionospheric Disruption */}
           <article className="core-panel">
-            <h3>📡 NavIC Ionospheric Disruption</h3>
+            <h3>📡 NavIC & GPS Signal Disruption</h3>
             <table className="core-table">
               <thead>
                 <tr>
                   <th>Coordinates</th>
-                  <th>TEC Units</th>
-                  <th>Error (m)</th>
-                  <th>(dx, dy) Vector</th>
+                  <th>Interference Level</th>
+                  <th>GPS Error</th>
+                  <th>Correction Data</th>
                 </tr>
               </thead>
               <tbody>
@@ -479,13 +479,13 @@ function App() {
 
           {/* Subsystem 2: Power Grid GIC Simulator */}
           <article className="core-panel">
-            <h3>⚡ Localized Power Grid Simulator</h3>
+            <h3>⚡ Indian Power Grid Safety Monitor</h3>
             <table className="core-table">
               <thead>
                 <tr>
-                  <th>Grid Node</th>
-                  <th>GIC (Amps)</th>
-                  <th>Status</th>
+                  <th>City Grid</th>
+                  <th>Storm Current</th>
+                  <th>Safety Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -503,7 +503,7 @@ function App() {
             </table>
             {Array.isArray(core.subsystems.localized_power_grid_gic.automated_topology_advisory) && (
               <div className="advisory-box" style={{ marginTop: '12px' }}>
-                <strong>AI ADVISORY:</strong> Topology actions required: {
+                <strong>AI ADVISORY:</strong> Emergency actions needed: {
                   core.subsystems.localized_power_grid_gic.automated_topology_advisory.map(a => `${a.node_id} (${a.action})`).join(', ')
                 }
               </div>
@@ -512,13 +512,13 @@ function App() {
 
           {/* Subsystem 3: Satellite Orbital Drag */}
           <article className="core-panel">
-            <h3>🛰️ LEO Satellite Orbital Decay</h3>
+            <h3>🛰️ Satellite Altitude Drop Monitor</h3>
             <table className="core-table">
               <thead>
                 <tr>
                   <th>Satellite</th>
-                  <th>Decay/Day</th>
-                  <th>Fuel Burn Alert</th>
+                  <th>Altitude Lost/Day</th>
+                  <th>Action Required</th>
                 </tr>
               </thead>
               <tbody>
